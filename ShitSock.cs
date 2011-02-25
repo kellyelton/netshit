@@ -56,7 +56,7 @@ namespace Skylabs.NetShit
             }
             catch(Exception e)
             {
-                handleError("Connect method: " + e.Message);
+                handleError(e,"Connect method: " + e.Message);
             }
             return false;
         }
@@ -286,11 +286,11 @@ namespace Skylabs.NetShit
             }
             catch (SocketException se)
             {
-                handleError(se.SocketErrorCode + " : " + se.Message);
+                handleError(se,se.SocketErrorCode + " : " + se.Message);
             }
             catch (Exception ioe)
             {
-                handleError(ioe.Message);
+                handleError(ioe,ioe.Message);
             }
             return false;
         }
@@ -316,7 +316,7 @@ namespace Skylabs.NetShit
         /// Called when there is an error in the SocketClient class.
         /// </summary>
         /// <param name="error">String representation of the error.</param>
-        public abstract void handleError(String error);
+        public abstract void handleError(Exception e,String error);
         /// <summary>
         /// Called when the server sends data that isn't intercepted by the Socket Client class.
         /// </summary>
