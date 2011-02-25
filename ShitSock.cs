@@ -42,6 +42,7 @@ namespace Skylabs.NetShit
                 sock.ReceiveTimeout = 10000;
                 boolConnected = true;
                 intLastPing = 0;
+                sock.Blocking = true;
                 handleConnect(strHost, intPort);
                 oThread = new Thread(new ThreadStart(this.run));
                 oThread.Start();
@@ -68,6 +69,7 @@ namespace Skylabs.NetShit
                 sock = new Socket(ipEnd.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
                 sock.ReceiveTimeout = 10000;
                 sock.Connect(ipEnd);
+                sock.Blocking = true;
                 boolConnected = true;
                 intLastPing = 0;
                 handleConnect(Host, Port);
