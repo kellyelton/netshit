@@ -10,12 +10,14 @@ namespace Skylabs.NetShit
 
     public abstract class ShitSock
     {
-        public Socket sock { get; set; }
+        public TcpClient sock { get; set; }
         private IPEndPoint ipEnd;
         private Boolean boolEnd = false;
         private Boolean boolConnected = false;
         private String strDisconnectReason = "";
         private int intLastPing = 0;
+        private DateTime LastPingSent;
+        private DateTime LastPingRecieved;
         protected Thread oThread;
         protected String strHost;
         protected Int32 intPort;
@@ -30,19 +32,21 @@ namespace Skylabs.NetShit
             WaitingForStart,Reading,Ended, inHeader, inArgument
         }
 
-        public void GetAcceptedSocket(Socket s)
+        public void GetAcceptedSocket(TcpClient s)
         {
             try
             {
                 sock = s;
-                IPEndPoint remoteIpEndPoint = s.RemoteEndPoint as IPEndPoint;
+                IPEndPoint remoteIpEndPoint = s.Client.RemoteEndPoint as IPEndPoint;
                 strHost = remoteIpEndPoint.Address.ToString();
                 intPort = remoteIpEndPoint.Port;
                 ipEnd = remoteIpEndPoint;
                 sock.ReceiveTimeout = 10000;
                 boolConnected = true;
                 intLastPing = 0;
-                sock.Blocking = true;
+                LastPingSent = DateTime.Now;
+                LastPingRecieved = DateTime.Now;
+                sock.Client.Blocking = true;
                 handleConnect(strHost, intPort);
                 oThread = new Thread(new ThreadStart(this.run));
                 oThread.Start();
@@ -66,15 +70,18 @@ namespace Skylabs.NetShit
                 strHost = Host;
                 intPort = Port;
                 ipEnd = HostToEndpoint(Host,Port);
-                sock = new Socket(ipEnd.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+                sock = new TcpClient();
+                //sock = new Socket(ipEnd.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
                 sock.ReceiveTimeout = 10000;
                 sock.Connect(ipEnd);
-                sock.Blocking = true;
+                sock.Client.Blocking = true;
                 boolConnected = true;
                 intLastPing = 0;
                 handleConnect(Host, Port);
                 oThread = new Thread(new ThreadStart(this.run));
                 oThread.Start();
+                LastPingSent = DateTime.Now;
+                LastPingRecieved = DateTime.Now;
                 return true;
             }
             catch(Exception e)
@@ -108,16 +115,21 @@ namespace Skylabs.NetShit
         {
             while(!boolEnd)
             {
-                SocketMessage sm = readSocket();
-                if (intLastPing == 10)
-                    Close("Haven't recieved data in too long.", true);
+                readSocket();
                 if (boolEnd)
                     break;
-                if (!sm.Empty)
-                    handleInput(sm);
                 try
                 {
-
+                    TimeSpan ts = new TimeSpan(DateTime.Now.Ticks - LastPingRecieved.Ticks);
+                    if (ts.TotalMinutes >= 1)
+                    {
+                        Close("Haven't recieved data in too long.", true);
+                    }
+                    ts = new TimeSpan(DateTime.Now.Ticks - LastPingSent.Ticks);
+                    if (ts.TotalSeconds >= 20)
+                    {
+                        writeMessage(new PingMessage());
+                    }
                     Thread.Sleep(100);
                 }
                 catch (Exception ie) 
@@ -143,162 +155,126 @@ namespace Skylabs.NetShit
             catch (Exception e)
             { }
         }
-        /// <summary>
-        /// Reads data from the socket. Handles fragmented data and data fracturing.
-        /// </summary>
-        /// <returns>SocketMessage with data recieved, or a SocketMessage with .Empty being true on no message.</returns>
-        private SocketMessage readSocket()
+        private void processMessage(SocketMessage sm)
         {
-            String strBuff = "";
-            String strTemp = "";
-            int intTimeoutCount = 0;
-            Boolean bDone = false;
-            SocketReadState sr = SocketReadState.WaitingForStart;
-            System.Text.Encoding enc = System.Text.Encoding.ASCII;
-
-            byte[] b;
-            while (!bDone)
+            if (!sm.Empty)
+                handleInput(sm);
+        }
+        /// <summary>
+        /// Reads data from socket if it's available, turns the data into a SocketMessage, and sends it to proccessMessage()
+        /// </summary>
+        private void readSocket()
+        {
+            StringBuilder sbuildmessage = new StringBuilder();
+            NetworkStream stream = sock.GetStream();
+            if (sock.Available > 0)
             {
-                b = new byte[1];
-                try
+                while (sock.Available > 0)
                 {
-                    //sock.Receive(bb);
-                    sock.Receive(b,1,SocketFlags.None);
-
-                    int i = 1;
-                    //sock.Receive(bb, 256, SocketFlags.None);
-
+                    int readAmount = sock.ReceiveBufferSize;
+                    if (sock.ReceiveBufferSize > sock.Available)
+                        readAmount = sock.Available;
+                    byte[] bIn = new byte[readAmount];
+                    stream.Read(bIn, 0, readAmount);
+                    LastPingRecieved = DateTime.Now;
+                    sbuildmessage.Append(Encoding.ASCII.GetString(bIn));
                 }
-                catch (System.Net.Sockets.SocketException se)
+                char[] letters = sbuildmessage.ToString().ToCharArray();
+                SocketReadState sr= SocketReadState.WaitingForStart;
+                String strBuff = "";
+                foreach (char c in letters)
                 {
-                    intLastPing++;
-                    if (se.SocketErrorCode == SocketError.TimedOut)
+                    if (sr == SocketReadState.WaitingForStart || sr == SocketReadState.Reading)
                     {
-                        if (!strBuff.Equals(""))
+                        switch (sr)
                         {
-                            intTimeoutCount++;
-                            if (intTimeoutCount == 10)
+                            case SocketReadState.WaitingForStart:
+                                if (c == 2)//Started message
+                                {
+                                    sr = SocketReadState.Reading;
+                                    continue;
+                                }
+                                else if (c == 1)//just a ping
+                                {
+                                    processMessage(new PingMessage());
+                                }
+                                else if (c == 6)//remote socket sent end message
+                                {
+                                    Close("Remote Host requested close.", false);
+                                    //return new SocketMessage();
+                                }
+                                else if (c == 0)
+                                {
+                                    //return new SocketMessage();
+                                }
+                                break;
+                            case SocketReadState.Reading:
+                                if (c != 5)//reading
+                                    strBuff += c;
+                                else// c==5 so were done with the message.
+                                {
+                                    sr = SocketReadState.Ended;
+                                }
+                                break;
+                        }
+                    }
+                    String strTemp = "";
+                    if (sr == SocketReadState.Ended)
+                    {
+                        sr = SocketReadState.inHeader;
+                        SocketMessage sm = new SocketMessage();
+                        strTemp = "";
+                        foreach (char ch in strBuff)
+                        {
+                            if (sr == SocketReadState.inHeader)
                             {
-                                Close("readSocket timed out in the middle of a message", false);
-                                return new SocketMessage();
+                                if (ch != 3)
+                                {
+                                    strTemp += ch;
+                                    continue;
+                                }
+                                else
+                                {
+                                    sm.Header = strTemp;
+                                    strTemp = "";
+                                    sr = SocketReadState.inArgument;
+                                    continue;
+                                }
                             }
-                            else
+                            else if (sr == SocketReadState.inArgument)
                             {
-                                try
+                                if (ch != 4)
                                 {
-                                    Thread.Sleep(100);
+                                    strTemp += ch;
+                                    continue;
                                 }
-                                catch (Exception e)
+                                else
                                 {
-                                    
+                                    sm.Arguments.Add(strTemp);
+                                    strTemp = "";
+                                    continue;
                                 }
-                                continue;
                             }
                         }
-                        else
+                        if (!strTemp.Trim().Equals(""))
                         {
-                            writeMessage(new PingMessage());
-                            return new SocketMessage();
-                        }
-                    }
-                    else
-                    {
-                        Close("Socket error: " + se.ErrorCode.ToString() + " : " + se.Message, false);
-                        return new SocketMessage();
-                    }
-                }
-                catch (Exception e)
-                {
-                    return new SocketMessage();
-                }
-                if (b[0] != 0)
-                    intLastPing = 0;
-                else
-                    intLastPing++;
-                char c = (char)b[0];
-                if (sr == SocketReadState.WaitingForStart || sr == SocketReadState.Reading)
-                {
-                    switch (sr)
-                    {
-                        case SocketReadState.WaitingForStart:
-                            if (c == 2)//Started message
-                            {
-                                sr = SocketReadState.Reading;
-                                continue;
-                            }
-                            else if (c == 1)//just a ping
-                            {
-                                return new PingMessage();
-                            }
-                            else if (c == 6)//remote socket sent end message
-                            {
-                                Close("Remote Host requested close.", false);
-                                return new SocketMessage();
-                            }
-                            else if (c == 0)
-                            {
-                                return new SocketMessage();
-                            }
-                            break;
-                        case SocketReadState.Reading:
-                            if (c != 5)//reading
-                                strBuff += c;
-                            else// c==5 so were done with the message.
-                            {
-                                sr = SocketReadState.Ended;
-                            }
-                            break;
-                    }
-                }
-                if (sr == SocketReadState.Ended)
-                {
-                    sr = SocketReadState.inHeader;
-                    SocketMessage sm = new SocketMessage();
-                    strTemp = "";
-                    foreach (char ch in strBuff)
-                    {
-                        if (sr == SocketReadState.inHeader)
-                        {
-                            if (ch != 3)
-                            {
-                                strTemp += ch;
-                                continue;
-                            }
-                            else
-                            {
+                            if (sr == SocketReadState.inHeader)
                                 sm.Header = strTemp;
-                                strTemp = "";
-                                sr = SocketReadState.inArgument;
-                                continue;
-                            }
-                        }
-                        else if (sr == SocketReadState.inArgument)
-                        {
-                            if (ch != 4)
-                            {
-                                strTemp += ch;
-                                continue;
-                            }
-                            else
-                            {
+                            else if (sr == SocketReadState.inArgument)
                                 sm.Arguments.Add(strTemp);
-                                strTemp = "";
-                                continue;
-                            }
-                        }
-                    }
-                    if (!strTemp.Trim().Equals(""))
-                    {
-                        if (sr == SocketReadState.inHeader)
-                            sm.Header = strTemp;
-                        else if (sr == SocketReadState.inArgument)
-                            sm.Arguments.Add(strTemp);  
 
+                        }
+                        processMessage(sm);
+                        sr = SocketReadState.WaitingForStart;
                     }
-                    return sm;
                 }
             }
-            return new SocketMessage();
+            else
+            {
+                Thread.Sleep(500);
+            }
+
+
         }
 
         /// <summary>
@@ -310,7 +286,9 @@ namespace Skylabs.NetShit
         {
             try
             {
-                sock.Send(Encoding.ASCII.GetBytes(sm.getMessage()));
+                byte[] mess = Encoding.ASCII.GetBytes(sm.getMessage());
+                sock.GetStream().Write(mess, 0, mess.Length);
+                LastPingSent = DateTime.Now;
                 return true;
             }
             catch (SocketException se)
