@@ -10,7 +10,7 @@ namespace Skylabs.NetShit
 
     public abstract class ShitSock
     {
-        private Socket sock; 
+        public Socket sock { get; set; }
         private IPEndPoint ipEnd;
         private Boolean boolEnd = false;
         private Boolean boolConnected = false;
