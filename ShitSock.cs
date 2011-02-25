@@ -164,12 +164,14 @@ namespace Skylabs.NetShit
                 {
                     //sock.Receive(bb);
                     sock.Receive(b,1,SocketFlags.None);
+
+                    int i = 1;
                     //sock.Receive(bb, 256, SocketFlags.None);
 
                 }
                 catch (System.Net.Sockets.SocketException se)
                 {
-
+                    intLastPing++;
                     if (se.SocketErrorCode == SocketError.TimedOut)
                     {
                         if (!strBuff.Equals(""))
@@ -209,13 +211,13 @@ namespace Skylabs.NetShit
                 {
                     return new SocketMessage();
                 }
-                intLastPing = 0;
+                if (b[0] != 0)
+                    intLastPing = 0;
+                else
+                    intLastPing++;
                 char c = (char)b[0];
                 if (sr == SocketReadState.WaitingForStart || sr == SocketReadState.Reading)
                 {
-                   //if (c == 0)
-                        //return new SocketMessage();
-
                     switch (sr)
                     {
                         case SocketReadState.WaitingForStart:
@@ -231,6 +233,10 @@ namespace Skylabs.NetShit
                             else if (c == 6)//remote socket sent end message
                             {
                                 Close("Remote Host requested close.", false);
+                                return new SocketMessage();
+                            }
+                            else if (c == 0)
+                            {
                                 return new SocketMessage();
                             }
                             break;
