@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 namespace Skylabs.NetShit
 {
         /// <summary>
@@ -41,20 +42,20 @@ namespace Skylabs.NetShit
                         return true;
                 }
             }
-            public ArrayList Arguments;
+            public List<String> Arguments;
             private String _Header;
             private Boolean _forceFull = false;
             public SocketMessage()
             {
                 _Header = "";
-                Arguments = new ArrayList(0);
+                Arguments = new List<String>(0);
 
             }
             public SocketMessage(String header)
             {
                 _Header = "";
                 Header = header;
-                Arguments = new ArrayList(0);
+                Arguments = new List<String>(0);
             }
             /// <summary>
             /// Takes the message data and formats it into a string

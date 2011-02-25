@@ -30,6 +30,27 @@ namespace Skylabs.NetShit
             WaitingForStart,Reading,Ended, inHeader, inArgument
         }
 
+        public void GetAcceptedSocket(Socket s)
+        {
+            try
+            {
+                sock = s;
+                IPEndPoint remoteIpEndPoint = s.RemoteEndPoint as IPEndPoint;
+                strHost = remoteIpEndPoint.Address.ToString();
+                intPort = remoteIpEndPoint.Port;
+                ipEnd = remoteIpEndPoint;
+                sock.ReceiveTimeout = 10000;
+                boolConnected = true;
+                intLastPing = 0;
+                handleConnect(strHost, intPort);
+                oThread = new Thread(new ThreadStart(this.run));
+                oThread.Start();
+            }
+            catch (Exception e)
+            {
+                handleError(e, "Connect method: " + e.Message);
+            }
+        }
 
         /// <summary>
         /// Connect to a server.
