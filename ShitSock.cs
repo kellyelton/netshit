@@ -115,7 +115,10 @@ namespace Skylabs.NetShit
         {
             while(!boolEnd)
             {
-                readSocket();
+                if (sock.Connected)
+                    readSocket();
+                else
+                    boolEnd = true;
                 if (boolEnd)
                     break;
                 try
@@ -218,53 +221,22 @@ namespace Skylabs.NetShit
                                 break;
                         }
                     }
-                    String strTemp = "";
                     if (sr == SocketReadState.Ended)
                     {
-                        sr = SocketReadState.inHeader;
                         SocketMessage sm = new SocketMessage();
-                        strTemp = "";
-                        foreach (char ch in strBuff)
+                        String[] firstsplit = strBuff.Split(new char[1] { (char)3 });
+                        sm.Header = firstsplit[0];
+                        if (firstsplit.Length > 1)
                         {
-                            if (sr == SocketReadState.inHeader)
+                            String[] args = firstsplit[1].Split(new char[1] { (char)4 });
+                            foreach (String a in args)
                             {
-                                if (ch != 3)
-                                {
-                                    strTemp += ch;
-                                    continue;
-                                }
-                                else
-                                {
-                                    sm.Header = strTemp;
-                                    strTemp = "";
-                                    sr = SocketReadState.inArgument;
-                                    continue;
-                                }
+                                sm.Arguments.Add(a);
                             }
-                            else if (sr == SocketReadState.inArgument)
-                            {
-                                if (ch != 4)
-                                {
-                                    strTemp += ch;
-                                    continue;
-                                }
-                                else
-                                {
-                                    sm.Arguments.Add(strTemp);
-                                    strTemp = "";
-                                    continue;
-                                }
-                            }
-                        }
-                        if (!strTemp.Trim().Equals(""))
-                        {
-                            if (sr == SocketReadState.inHeader)
-                                sm.Header = strTemp;
-                            else if (sr == SocketReadState.inArgument)
-                                sm.Arguments.Add(strTemp);
-
                         }
                         processMessage(sm);
+                        strBuff = "";
+                        sm = new SocketMessage();
                         sr = SocketReadState.WaitingForStart;
                     }
                 }
