@@ -116,7 +116,9 @@ namespace Skylabs.NetShit
             while(!boolEnd)
             {
                 if (sock.Connected)
+                {
                     readSocket();
+                }
                 else
                     boolEnd = true;
                 if (boolEnd)
