@@ -103,7 +103,7 @@ namespace Skylabs.NetShit
             strDisconnectReason = reason;
             if (sendCloseMessage)
                 writeMessage(new EndMessage());
-            handleDisconnect(reason, strHost, intPort);
+            strDisconnectReason = reason;
         }
 
         /// <summary>
@@ -135,7 +135,7 @@ namespace Skylabs.NetShit
                     {
                         writeMessage(new PingMessage());
                     }
-                    Thread.Sleep(100);
+                    Thread.Sleep(50);
                 }
                 catch (Exception ie) 
                 {
@@ -153,6 +153,7 @@ namespace Skylabs.NetShit
             }
             catch (Exception e)
             { }
+            handleDisconnect(strDisconnectReason, strHost, intPort);
             try
             {
                 this.oThread.Abort();
@@ -245,7 +246,7 @@ namespace Skylabs.NetShit
             }
             else
             {
-                Thread.Sleep(500);
+                Thread.Sleep(50);
             }
 
 
