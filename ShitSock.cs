@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading;
 //using System.Windows;
 using System.Collections.Generic;
+using System.IO;
 namespace Skylabs.NetShit
 {
 
@@ -268,11 +269,19 @@ namespace Skylabs.NetShit
             }
             catch (SocketException se)
             {
-                handleError(se,se.SocketErrorCode + " : " + se.Message);
+                handleError(se, se.SocketErrorCode + " : " + se.Message);
+            }
+            catch (IOException ioe)
+            {
+                Close("IOException, connection closed.", false);
+            }
+            catch (ObjectDisposedException oe)
+            {
+                Close("Connection closed, could not GetStream()", false);
             }
             catch (Exception ioe)
             {
-                handleError(ioe,ioe.Message);
+                handleError(ioe, ioe.Message);
             }
             return false;
         }
