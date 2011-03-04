@@ -13,9 +13,9 @@ namespace Skylabs.NetShit
     {
         public TcpClient sock { get; set; }
         private IPEndPoint ipEnd;
-        private Boolean boolEnd = false;
-        private Boolean boolConnected = false;
-        private String strDisconnectReason = "";
+        private Boolean boolEnd;
+        private Boolean boolConnected;
+        private String strDisconnectReason;
         private int intLastPing = 0;
         private DateTime LastPingSent;
         private DateTime LastPingRecieved;
@@ -37,7 +37,10 @@ namespace Skylabs.NetShit
         {
             try
             {
+                strDisconnectReason = "";
                 sock = s;
+                boolConnected = false;
+                boolEnd = false;
                 IPEndPoint remoteIpEndPoint = s.Client.RemoteEndPoint as IPEndPoint;
                 strHost = remoteIpEndPoint.Address.ToString();
                 intPort = remoteIpEndPoint.Port;
@@ -68,6 +71,9 @@ namespace Skylabs.NetShit
         {
             try
             {
+                strDisconnectReason = "";
+                boolEnd = false;
+                boolConnected = false;
                 strHost = Host;
                 intPort = Port;
                 ipEnd = HostToEndpoint(Host,Port);
