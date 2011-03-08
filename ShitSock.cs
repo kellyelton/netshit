@@ -142,7 +142,7 @@ namespace Skylabs.NetShit
                     {
                         writeMessage(new PingMessage());
                     }
-                    Thread.Sleep(50);
+                    Thread.Sleep(100);
                 }
                 catch (Exception ie) 
                 {
@@ -253,7 +253,7 @@ namespace Skylabs.NetShit
             }
             else
             {
-                Thread.Sleep(50);
+                Thread.Sleep(100);
             }
 
 
