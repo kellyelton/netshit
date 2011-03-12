@@ -171,6 +171,9 @@ namespace Skylabs.NetShit
                 catch (Exception e)
                 { }
             }
+            catch (ThreadAbortException te)
+            {
+            }
             catch (Exception e)
             {
                 handleError(e, "Unhandled exception");
