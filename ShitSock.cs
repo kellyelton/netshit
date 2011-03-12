@@ -1,17 +1,18 @@
 using System;
+
+//using System.Windows;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
-//using System.Windows;
-using System.Collections.Generic;
-using System.IO;
+
 namespace Skylabs.NetShit
 {
-
     public abstract class ShitSock
     {
         public TcpClient sock { get; set; }
+
         private IPEndPoint ipEnd;
         private Boolean boolEnd;
         private Boolean boolConnected;
@@ -30,7 +31,7 @@ namespace Skylabs.NetShit
 
         private enum SocketReadState
         {
-            WaitingForStart,Reading,Ended, inHeader, inArgument
+            WaitingForStart, Reading, Ended, inHeader, inArgument
         }
 
         public void GetAcceptedSocket(TcpClient s)
@@ -76,7 +77,7 @@ namespace Skylabs.NetShit
                 boolConnected = false;
                 strHost = Host;
                 intPort = Port;
-                ipEnd = HostToEndpoint(Host,Port);
+                ipEnd = HostToEndpoint(Host, Port);
                 sock = new TcpClient();
                 //sock = new Socket(ipEnd.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
                 sock.ReceiveTimeout = 10000;
@@ -91,9 +92,9 @@ namespace Skylabs.NetShit
                 LastPingRecieved = DateTime.Now;
                 return true;
             }
-            catch(Exception e)
+            catch (Exception e)
             {
-                handleError(e,"Connect method: " + e.Message);
+                handleError(e, "Connect method: " + e.Message);
             }
             return false;
         }
@@ -120,59 +121,68 @@ namespace Skylabs.NetShit
         /// </summary>
         public void run()
         {
-            while(!boolEnd)
+            try
             {
-                if (sock.Connected)
+                while (!boolEnd)
                 {
-                    readSocket();
+                    if (sock.Connected)
+                    {
+                        readSocket();
+                    }
+                    else
+                        boolEnd = true;
+                    if (boolEnd)
+                        break;
+                    try
+                    {
+                        TimeSpan ts = new TimeSpan(DateTime.Now.Ticks - LastPingRecieved.Ticks);
+                        if (ts.TotalMinutes >= 1)
+                        {
+                            Close("Haven't recieved data in too long.", true);
+                        }
+                        ts = new TimeSpan(DateTime.Now.Ticks - LastPingSent.Ticks);
+                        if (ts.TotalSeconds >= 20)
+                        {
+                            writeMessage(new PingMessage());
+                        }
+                        Thread.Sleep(100);
+                    }
+                    catch (Exception ie)
+                    {
+                        Close("Error: " + ie.Message, false);
+                    }
                 }
-                else
-                    boolEnd = true;
-                if (boolEnd)
-                    break;
                 try
                 {
-                    TimeSpan ts = new TimeSpan(DateTime.Now.Ticks - LastPingRecieved.Ticks);
-                    if (ts.TotalMinutes >= 1)
-                    {
-                        Close("Haven't recieved data in too long.", true);
-                    }
-                    ts = new TimeSpan(DateTime.Now.Ticks - LastPingSent.Ticks);
-                    if (ts.TotalSeconds >= 20)
-                    {
-                        writeMessage(new PingMessage());
-                    }
-                    Thread.Sleep(100);
+                    sock.Close();
                 }
-                catch (Exception ie) 
+                catch (Exception ioe) { }
+                try
                 {
-                    Close("Error: " + ie.Message, false);
+                    this.oThread.Join(1000);
                 }
-            }
-            try
-            {
-                sock.Close();
-            }
-            catch (Exception ioe) { }
-            try
-            {
-                this.oThread.Join(1000);
-            }
-            catch (Exception e)
-            { }
-            handleDisconnect(strDisconnectReason, strHost, intPort);
-            try
-            {
-                this.oThread.Abort();
+                catch (Exception e)
+                { }
+                handleDisconnect(strDisconnectReason, strHost, intPort);
+                try
+                {
+                    this.oThread.Abort();
+                }
+                catch (Exception e)
+                { }
             }
             catch (Exception e)
-            { }
+            {
+                handleError(e, "Unhandled exception");
+            }
         }
+
         private void processMessage(SocketMessage sm)
         {
             if (!sm.Empty)
                 handleInput(sm);
         }
+
         /// <summary>
         /// Reads data from socket if it's available, turns the data into a SocketMessage, and sends it to proccessMessage()
         /// </summary>
@@ -193,7 +203,7 @@ namespace Skylabs.NetShit
                     sbuildmessage.Append(Encoding.ASCII.GetString(bIn));
                 }
                 char[] letters = sbuildmessage.ToString().ToCharArray();
-                SocketReadState sr= SocketReadState.WaitingForStart;
+                SocketReadState sr = SocketReadState.WaitingForStart;
                 String strBuff = "";
                 foreach (char c in letters)
                 {
@@ -255,12 +265,10 @@ namespace Skylabs.NetShit
             {
                 Thread.Sleep(100);
             }
-
-
         }
 
         /// <summary>
-        /// Sends a message to the remote socket. 
+        /// Sends a message to the remote socket.
         /// </summary>
         /// <param name="sm">SocketMessage to be sent.</param>
         /// <returns>true on success, false on error. Note: Success just means that the message has been sent, it doesn't verifiy it was recieved.</returns>
@@ -275,7 +283,7 @@ namespace Skylabs.NetShit
             }
             catch (SocketException se)
             {
-                handleError(se, se.SocketErrorCode + " : " + se.Message);
+                //handleError(se, se.SocketErrorCode + " : " + se.Message);
             }
             catch (IOException ioe)
             {
@@ -313,18 +321,21 @@ namespace Skylabs.NetShit
         /// Called when there is an error in the SocketClient class.
         /// </summary>
         /// <param name="error">String representation of the error.</param>
-        public abstract void handleError(Exception e,String error);
+        public abstract void handleError(Exception e, String error);
+
         /// <summary>
         /// Called when the server sends data that isn't intercepted by the Socket Client class.
         /// </summary>
         /// <param name="input">Data sent from the server as a String</param>
         public abstract void handleInput(SocketMessage input);
+
         /// <summary>
         /// Called when the client connects to the server
         /// </summary>
         /// <param name="host">Host name of the server</param>
         /// <param name="port">Port of the server.</param>
         public abstract void handleConnect(String host, int port);
+
         /// <summary>
         /// Called when the connection to the server is closed for any reason.
         /// </summary>
@@ -334,4 +345,3 @@ namespace Skylabs.NetShit
         public abstract void handleDisconnect(String reason, String host, int port);
     }
 }
-
