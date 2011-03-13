@@ -292,6 +292,9 @@ namespace Skylabs.NetShit
             {
                 Close("IOException, connection closed.", false);
             }
+            catch (NullReferenceException nre)
+            {
+            }
             catch (ObjectDisposedException oe)
             {
                 Close("Connection closed, could not GetStream()", false);
