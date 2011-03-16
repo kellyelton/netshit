@@ -72,12 +72,16 @@ namespace Skylabs.NetShit
         {
             try
             {
+                ipEnd = HostToEndpoint(Host, Port);
+                if (ipEnd == null)
+                {
+                    return false;
+                }
                 strDisconnectReason = "";
                 boolEnd = false;
                 boolConnected = false;
                 strHost = Host;
                 intPort = Port;
-                ipEnd = HostToEndpoint(Host, Port);
                 sock = new TcpClient();
                 //sock = new Socket(ipEnd.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
                 sock.ReceiveTimeout = 10000;
@@ -311,16 +315,21 @@ namespace Skylabs.NetShit
         /// </summary>
         /// <param name="hostName">Host name, such as "www.google.com" or "localhost"</param>
         /// <param name="port">Port of the server.</param>
-        /// <returns>System.Net.IPEndPoint</returns>
+        /// <returns>System.Net.IPEndPoint, or NULL on error.</returns>
         public IPEndPoint HostToEndpoint(String hostName, Int32 port)
         {
-            IPHostEntry host = Dns.GetHostEntry(hostName);
+            try
+            {
+                IPHostEntry host = Dns.GetHostEntry(hostName);
 
-            // Addres of the host.
-            IPAddress[] addressList = host.AddressList;
+                // Addres of the host.
+                IPAddress[] addressList = host.AddressList;
 
-            // Instantiates the endpoint and socket.
-            return new IPEndPoint(addressList[addressList.Length - 1], port);
+                // Instantiates the endpoint and socket.
+                return new IPEndPoint(addressList[addressList.Length - 1], port);
+            }
+            catch { }
+            return null;
         }
 
         /// <summary>
