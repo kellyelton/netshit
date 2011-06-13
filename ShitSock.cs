@@ -345,7 +345,7 @@ namespace Skylabs.NetShit
         /// Called when there is an error in the SocketClient class.
         /// </summary>
         /// <param name="error">String representation of the error.</param>
-        public abstract void handleError(Exception e, String error)
+        public virtual void handleError(Exception e, String error)
         {
             onError.Invoke(e, error);
         }
@@ -354,7 +354,7 @@ namespace Skylabs.NetShit
         /// Called when the server sends data that isn't intercepted by the Socket Client class.
         /// </summary>
         /// <param name="input">Data sent from the server as a String</param>
-        public abstract void handleInput(SocketMessage input)
+        public virtual void handleInput(SocketMessage input)
         {
             onInput.Invoke(input);
         }
@@ -364,7 +364,7 @@ namespace Skylabs.NetShit
         /// </summary>
         /// <param name="host">Host name of the server</param>
         /// <param name="port">Port of the server.</param>
-        public abstract void handleConnect(String host, int port)
+        public virtual void handleConnect(String host, int port)
         {
             onConnect.Invoke(host, port);
         }
@@ -375,7 +375,7 @@ namespace Skylabs.NetShit
         /// <param name="reason">String from eather the Close() method or from the server explaining why the connection was dropped.</param>
         /// <param name="host">Host name of the server</param>
         /// <param name="port">Port of the server.</param>
-        public abstract void handleDisconnect(String reason, String host, int port)
+        public virtual void handleDisconnect(String reason, String host, int port)
         {
             onDisconnect.Invoke(reason, host, port);
         }
