@@ -13,6 +13,15 @@ namespace Skylabs.NetShit
     {
         public TcpClient sock { get; set; }
 
+        public delegate void dOnError(Exception e, String error);
+        public delegate void dOnInput(SocketMessage input);
+        public delegate void dOnConnect(String host, int port);
+        public delegate void dOnDisconnect(String reason, String host, int port);
+        public event dOnError onError;
+        public event dOnInput onInput;
+        public event dOnConnect onConnect;
+        public event dOnDisconnect onDisconnect;
+
         private IPEndPoint ipEnd;
         private Boolean boolEnd;
         private Boolean boolConnected;
@@ -336,20 +345,29 @@ namespace Skylabs.NetShit
         /// Called when there is an error in the SocketClient class.
         /// </summary>
         /// <param name="error">String representation of the error.</param>
-        public abstract void handleError(Exception e, String error);
+        public abstract void handleError(Exception e, String error)
+        {
+            onError.Invoke(e, error);
+        }
 
         /// <summary>
         /// Called when the server sends data that isn't intercepted by the Socket Client class.
         /// </summary>
         /// <param name="input">Data sent from the server as a String</param>
-        public abstract void handleInput(SocketMessage input);
+        public abstract void handleInput(SocketMessage input)
+        {
+            onInput.Invoke(input);
+        }
 
         /// <summary>
         /// Called when the client connects to the server
         /// </summary>
         /// <param name="host">Host name of the server</param>
         /// <param name="port">Port of the server.</param>
-        public abstract void handleConnect(String host, int port);
+        public abstract void handleConnect(String host, int port)
+        {
+            onConnect.Invoke(host, port);
+        }
 
         /// <summary>
         /// Called when the connection to the server is closed for any reason.
@@ -357,6 +375,9 @@ namespace Skylabs.NetShit
         /// <param name="reason">String from eather the Close() method or from the server explaining why the connection was dropped.</param>
         /// <param name="host">Host name of the server</param>
         /// <param name="port">Port of the server.</param>
-        public abstract void handleDisconnect(String reason, String host, int port);
+        public abstract void handleDisconnect(String reason, String host, int port)
+        {
+            onDisconnect.Invoke(reason, host, port);
+        }
     }
 }
