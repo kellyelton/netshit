@@ -47,6 +47,7 @@ namespace Skylabs.NetShit
         {
             try
             {
+                RegisterHandlers();
                 strDisconnectReason = "";
                 sock = s;
                 boolConnected = false;
@@ -61,7 +62,7 @@ namespace Skylabs.NetShit
                 LastPingSent = DateTime.Now;
                 LastPingRecieved = DateTime.Now;
                 sock.Client.Blocking = true;
-                handleConnect(strHost, intPort);
+                handleConnect(this, strHost, intPort);
                 oThread = new Thread(new ThreadStart(this.run));
                 oThread.Start();
             }
@@ -81,6 +82,7 @@ namespace Skylabs.NetShit
         {
             try
             {
+                RegisterHandlers();
                 ipEnd = HostToEndpoint(Host, Port);
                 if (ipEnd == null)
                 {
@@ -127,12 +129,28 @@ namespace Skylabs.NetShit
             strDisconnectReason = reason;
         }
 
+        private void RegisterHandlers()
+        {
+            onError += new dOnError(handleError);
+            onInput += new dOnInput(handleInput);
+            onConnect += new dOnConnect(handleConnect);
+            onDisconnect += new dOnDisconnect(handleDisconnect);
+        }
+
+        private void UnregisterHandlers()
+        {
+            onError -= handleError;
+            onInput -= handleInput;
+            onConnect -= handleConnect;
+            onDisconnect -= handleDisconnect;
+        }
+
         /// <summary>
         ///    Client loop. Automates pinging to make sure the connection still exists.
         ///     This should be called as a thread because it's a loop.
         ///     THIS FUNCTION STARTS THE CLIENT AFTER CONNECTION, WITHOUT IT NOTHING HAPPENS.
         /// </summary>
-        public void run()
+        private void run()
         {
             try
             {
@@ -191,6 +209,7 @@ namespace Skylabs.NetShit
             {
                 doError(e, "Unhandled exception");
             }
+            UnregisterHandlers();
         }
 
         private void processMessage(SocketMessage sm)
@@ -344,45 +363,41 @@ namespace Skylabs.NetShit
         private void doError(Exception e, String error)
         {
             onError.Invoke(this, e, error);
-            handleError(e, error);
         }
 
         private void doInput(SocketMessage input)
         {
             onInput.Invoke(this, input);
-            handleInput(input);
         }
 
         private void doConnect(String host, int port)
         {
             onConnect.Invoke(this, host, port);
-            handleConnect(host, port);
         }
 
         private void doDisconnect(String reason, String host, int port)
         {
             onDisconnect.Invoke(this, reason, host, port);
-            handleDisconnect(reason, host, port);
         }
 
         /// <summary>
         /// Called when there is an error in the SocketClient class.
         /// </summary>
         /// <param name="error">String representation of the error.</param>
-        public abstract void handleError(Exception e, String error);
+        public abstract void handleError(ShitSock sm, Exception e, String error);
 
         /// <summary>
         /// Called when the server sends data that isn't intercepted by the Socket Client class.
         /// </summary>
         /// <param name="input">Data sent from the server as a String</param>
-        public abstract void handleInput(SocketMessage input);
+        public abstract void handleInput(ShitSock sm, SocketMessage input);
 
         /// <summary>
         /// Called when the client connects to the server
         /// </summary>
         /// <param name="host">Host name of the server</param>
         /// <param name="port">Port of the server.</param>
-        public abstract void handleConnect(String host, int port);
+        public abstract void handleConnect(ShitSock sm, String host, int port);
 
         /// <summary>
         /// Called when the connection to the server is closed for any reason.
@@ -390,6 +405,6 @@ namespace Skylabs.NetShit
         /// <param name="reason">String from eather the Close() method or from the server explaining why the connection was dropped.</param>
         /// <param name="host">Host name of the server</param>
         /// <param name="port">Port of the server.</param>
-        public abstract void handleDisconnect(String reason, String host, int port);
+        public abstract void handleDisconnect(ShitSock sm, String reason, String host, int port);
     }
 }
