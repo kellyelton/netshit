@@ -67,7 +67,7 @@ namespace Skylabs.NetShit
             }
             catch (Exception e)
             {
-                handleError(e, "Connect method: " + e.Message);
+                doError(e, "Connect method: " + e.Message);
             }
         }
 
@@ -98,7 +98,7 @@ namespace Skylabs.NetShit
                 sock.Client.Blocking = true;
                 boolConnected = true;
                 intLastPing = 0;
-                handleConnect(Host, Port);
+                doConnect(Host, Port);
                 oThread = new Thread(new ThreadStart(this.run));
                 oThread.Start();
                 LastPingSent = DateTime.Now;
@@ -107,7 +107,7 @@ namespace Skylabs.NetShit
             }
             catch (Exception e)
             {
-                handleError(e, "Connect method: " + e.Message);
+                doError(e, "Connect method: " + e.Message);
             }
             return false;
         }
@@ -176,7 +176,7 @@ namespace Skylabs.NetShit
                 }
                 catch (Exception e)
                 { }
-                handleDisconnect(strDisconnectReason, strHost, intPort);
+                doDisconnect(strDisconnectReason, strHost, intPort);
                 try
                 {
                     this.oThread.Abort();
@@ -189,14 +189,14 @@ namespace Skylabs.NetShit
             }
             catch (Exception e)
             {
-                handleError(e, "Unhandled exception");
+                doError(e, "Unhandled exception");
             }
         }
 
         private void processMessage(SocketMessage sm)
         {
             if (!sm.Empty)
-                handleInput(sm);
+                doInput(sm);
         }
 
         /// <summary>
@@ -314,7 +314,7 @@ namespace Skylabs.NetShit
             }
             catch (Exception ioe)
             {
-                handleError(ioe, ioe.Message);
+                doError(ioe, ioe.Message);
             }
             return false;
         }
@@ -341,33 +341,48 @@ namespace Skylabs.NetShit
             return null;
         }
 
+        private void doError(Exception e, String error)
+        {
+            onError.Invoke(e, error);
+            handleError(e, error);
+        }
+
+        private void doInput(SocketMessage input)
+        {
+            onInput.Invoke(input);
+            handleInput(input);
+        }
+
+        private void doConnect(String host, int port)
+        {
+            onConnect.Invoke(host, port);
+            handleConnect(host, port);
+        }
+
+        private void doDisconnect(String reason, String host, int port)
+        {
+            onDisconnect.Invoke(reason, host, port);
+            handleDisconnect(reason, host, port);
+        }
+
         /// <summary>
         /// Called when there is an error in the SocketClient class.
         /// </summary>
         /// <param name="error">String representation of the error.</param>
-        public virtual void handleError(Exception e, String error)
-        {
-            onError.Invoke(e, error);
-        }
+        public abstract void handleError(Exception e, String error);
 
         /// <summary>
         /// Called when the server sends data that isn't intercepted by the Socket Client class.
         /// </summary>
         /// <param name="input">Data sent from the server as a String</param>
-        public virtual void handleInput(SocketMessage input)
-        {
-            onInput.Invoke(input);
-        }
+        public abstract void handleInput(SocketMessage input);
 
         /// <summary>
         /// Called when the client connects to the server
         /// </summary>
         /// <param name="host">Host name of the server</param>
         /// <param name="port">Port of the server.</param>
-        public virtual void handleConnect(String host, int port)
-        {
-            onConnect.Invoke(host, port);
-        }
+        public abstract void handleConnect(String host, int port);
 
         /// <summary>
         /// Called when the connection to the server is closed for any reason.
@@ -375,9 +390,6 @@ namespace Skylabs.NetShit
         /// <param name="reason">String from eather the Close() method or from the server explaining why the connection was dropped.</param>
         /// <param name="host">Host name of the server</param>
         /// <param name="port">Port of the server.</param>
-        public virtual void handleDisconnect(String reason, String host, int port)
-        {
-            onDisconnect.Invoke(reason, host, port);
-        }
+        public abstract void handleDisconnect(String reason, String host, int port);
     }
 }
