@@ -13,10 +13,10 @@ namespace Skylabs.NetShit
     {
         public TcpClient sock { get; set; }
 
-        public delegate void dOnError(Exception e, String error);
-        public delegate void dOnInput(SocketMessage input);
-        public delegate void dOnConnect(String host, int port);
-        public delegate void dOnDisconnect(String reason, String host, int port);
+        public delegate void dOnError(ShitSock sm, Exception e, String error);
+        public delegate void dOnInput(ShitSock sm, SocketMessage input);
+        public delegate void dOnConnect(ShitSock sm, String host, int port);
+        public delegate void dOnDisconnect(ShitSock sm, String reason, String host, int port);
         public event dOnError onError;
         public event dOnInput onInput;
         public event dOnConnect onConnect;
@@ -343,25 +343,25 @@ namespace Skylabs.NetShit
 
         private void doError(Exception e, String error)
         {
-            onError.Invoke(e, error);
+            onError.Invoke(this, e, error);
             handleError(e, error);
         }
 
         private void doInput(SocketMessage input)
         {
-            onInput.Invoke(input);
+            onInput.Invoke(this, input);
             handleInput(input);
         }
 
         private void doConnect(String host, int port)
         {
-            onConnect.Invoke(host, port);
+            onConnect.Invoke(this, host, port);
             handleConnect(host, port);
         }
 
         private void doDisconnect(String reason, String host, int port)
         {
-            onDisconnect.Invoke(reason, host, port);
+            onDisconnect.Invoke(this, reason, host, port);
             handleDisconnect(reason, host, port);
         }
 
