@@ -180,6 +180,7 @@ namespace Skylabs.NetShit
                     }
                     catch (Exception ie)
                     {
+                        System.Diagnostics.Debugger.Break();
                         Close("Error: " + ie.Message, false);
                     }
                 }
@@ -187,27 +188,26 @@ namespace Skylabs.NetShit
                 {
                     sock.Close();
                 }
-                catch (Exception ioe) { }
+                catch (Exception ioe)
+                {
+                    System.Diagnostics.Debugger.Break();
+                }
                 try
                 {
                     this.oThread.Join(1000);
                 }
                 catch (Exception e)
-                { }
+                { System.Diagnostics.Debugger.Break(); }
                 doDisconnect(strDisconnectReason, strHost, intPort);
                 try
                 {
                     this.oThread.Abort();
                 }
-                catch (Exception e)
+                catch (ThreadAbortException e)
                 { }
             }
             catch (ThreadAbortException te)
             {
-            }
-            catch (Exception e)
-            {
-                doError(e, "Unhandled exception");
             }
             UnregisterHandlers();
         }
