@@ -44,12 +44,12 @@ namespace Skylabs.NetShit
                 {
                     IPendpoint = Tools.HostToEndpoint(host, port);
                 }
-                catch(Exception e)
+                catch (Exception e)
                 {
                     onError.Invoke(this, e, "DNS Error.");
                     IPendpoint = null;
                 }
-                if(IPendpoint == null)
+                if (IPendpoint == null)
                 {
                     return false;
                 }
@@ -58,7 +58,7 @@ namespace Skylabs.NetShit
                 ShittySocket.Connect(IPendpoint);
                 return GetAcceptedSocket(ShittySocket);
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 onError.Invoke(this, e, "Connect method: " + e.Message);
             }
@@ -81,7 +81,7 @@ namespace Skylabs.NetShit
                 StartReceiving();
                 return true;
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 onError.Invoke(this, e, "Connect method: " + e.Message);
             }
@@ -90,7 +90,7 @@ namespace Skylabs.NetShit
 
         public void Close()
         {
-            if(ShittySocket.Connected)
+            if (ShittySocket.Connected)
                 ShittySocket.Close();
             _connected = false;
             onConnectionEvent(this, new ConnectionEvent(_hostname, _port, ConnectionEvent.eConnectionEvent.eceDisconnect));
@@ -108,7 +108,7 @@ namespace Skylabs.NetShit
                 ShittySocket.GetStream().Flush();
                 return true;
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 onError.Invoke(this, e, "Error writing data.");
                 return false;
@@ -125,7 +125,7 @@ namespace Skylabs.NetShit
                 // Complete sending the data to the remote device.
                 int bytesSent = client.EndSend(ar);
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 Console.WriteLine(e.ToString());
             }
@@ -143,7 +143,7 @@ namespace Skylabs.NetShit
                 ShittySocket.Client.BeginReceive(state.buffer, 0, ShitBag.BufferSize, 0,
                     new AsyncCallback(doInput), state);
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 onError.Invoke(this, e, "Error trying to receive data.");
             }
@@ -159,7 +159,7 @@ namespace Skylabs.NetShit
                 Socket client = state.workSocket;
                 // Read data from the remote device.
                 int bytesRead = client.EndReceive(ar);
-                if(bytesRead > 0)
+                if (bytesRead > 0)
                 {
                     // There might be more data, so store the data received so far.
                     state.sb.Append(Encoding.ASCII.GetString(state.buffer, 0, bytesRead));
@@ -170,7 +170,7 @@ namespace Skylabs.NetShit
                 else
                 {
                     // All the data has arrived; put it in response.
-                    if(state.sb.Length > 1)
+                    if (state.sb.Length > 1)
                     {
                         onInput.Invoke(this, state);
                     }
@@ -178,7 +178,7 @@ namespace Skylabs.NetShit
                     StartReceiving();
                 }
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 onError.Invoke(this, e, "Error in doInput");
             }
@@ -204,7 +204,12 @@ namespace Skylabs.NetShit
         /// <param name="sm">Object that had a boo boo</param>
         /// <param name="e">Exception passed</param>
         /// <param name="error">User friendly error message.</param>
-        protected virtual void handleError(object sm, Exception e, String error) { }
+        protected virtual void handleError(object sm, Exception e, String error)
+        {
+#if DEBUG
+            System.Diagnostics.Debugger.Break();
+#endif
+        }
 
         /// <summary>
         /// Whenever data is received, you can always find it here!
