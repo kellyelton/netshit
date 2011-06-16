@@ -51,8 +51,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.cs" />
+    <Compile Include="ConnectionEvent.cs" />
     <Compile Include="DummyException.cs" />
     <Compile Include="Forwarder.cs" />
+    <Compile Include="RawShitSock.cs" />
     <Compile Include="ShitSock.cs" />
     <Compile Include="SocketMessage.cs" />
     <Compile Include="PingMessage.cs" />
