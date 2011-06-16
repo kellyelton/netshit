@@ -21,7 +21,7 @@ namespace Skylabs.NetShit
         /// <param name="sendCloseMessage">Should the socket attempt to notify the remote socket of the disconnect. Don't use if the connection has already been dropped.</param>
         public void Close(Boolean sendCloseMessage)
         {
-            if (sendCloseMessage)
+            if(sendCloseMessage)
                 writeMessage(new EndMessage());
             base.Close();
         }
@@ -37,38 +37,38 @@ namespace Skylabs.NetShit
             return WriteData(mess);
         }
 
-        protected virtual void handleInput(object Sender, ShitBag shit)
+        override protected void handleInput(object Sender, ShitBag shit)
         {
             SocketReadState sr = SocketReadState.WaitingForStart;
             String strBuff = "";
-            foreach (char c in shit.buffer)
+            foreach(char c in shit.buffer)
             {
-                if (sr == SocketReadState.WaitingForStart || sr == SocketReadState.Reading)
+                if(sr == SocketReadState.WaitingForStart || sr == SocketReadState.Reading)
                 {
-                    switch (sr)
+                    switch(sr)
                     {
                         case SocketReadState.WaitingForStart:
-                            if (c == 2)//Started message
+                            if(c == 2)//Started message
                             {
                                 sr = SocketReadState.Reading;
                                 continue;
                             }
-                            else if (c == 1)//just a ping
+                            else if(c == 1)//just a ping
                             {
                                 doInput(new PingMessage());
                             }
-                            else if (c == 6)//remote socket sent end message
+                            else if(c == 6)//remote socket sent end message
                             {
                                 Close(false);
                                 //return new SocketMessage();
                             }
-                            else if (c == 0)
+                            else if(c == 0)
                             {
                                 //return new SocketMessage();
                             }
                             break;
                         case SocketReadState.Reading:
-                            if (c != 5)//reading
+                            if(c != 5)//reading
                                 strBuff += c;
                             else// c==5 so were done with the message.
                             {
@@ -77,15 +77,15 @@ namespace Skylabs.NetShit
                             break;
                     }
                 }
-                if (sr == SocketReadState.Ended)
+                if(sr == SocketReadState.Ended)
                 {
                     SocketMessage sm = new SocketMessage();
                     String[] firstsplit = strBuff.Split(new char[1] { (char)3 });
                     sm.Header = firstsplit[0];
-                    if (firstsplit.Length > 1)
+                    if(firstsplit.Length > 1)
                     {
                         String[] args = firstsplit[1].Split(new char[1] { (char)4 });
-                        foreach (String a in args)
+                        foreach(String a in args)
                         {
                             sm.Arguments.Add(a);
                         }
@@ -102,12 +102,12 @@ namespace Skylabs.NetShit
 
         private void doInput(SocketMessage input)
         {
-            if (!input.Empty)
+            if(!input.Empty)
             {
                 handleInput(this, input);
-                onSocketMessageInput.Invoke(this, input);
+                if(onSocketMessageInput != null)
+                    onSocketMessageInput.Invoke(this, input);
             }
-            //TODO Put shit here.
         }
     }
 }

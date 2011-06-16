@@ -11,7 +11,6 @@ namespace Skylabs.NetShit
         private IPEndPoint _ipEndPoint;
         private string _hostname;
         private int _port;
-        private int _lastping;
         public delegate void dOnError(object Sender, Exception e, String error);
         public delegate void dOnInput(object Sender, ShitBag bag);
         public delegate void dConnectionEvent(object Sender, ConnectionEvent e);
@@ -44,22 +43,31 @@ namespace Skylabs.NetShit
                 {
                     IPendpoint = Tools.HostToEndpoint(host, port);
                 }
-                catch (Exception e)
+                catch(Exception e)
                 {
+#if DEBUG
+                    System.Diagnostics.Debugger.Break();
+#endif
                     onError.Invoke(this, e, "DNS Error.");
                     IPendpoint = null;
                 }
-                if (IPendpoint == null)
+                if(IPendpoint == null)
                 {
                     return false;
                 }
                 ShittySocket = new TcpClient();
-                ShittySocket.ReceiveTimeout = 10000;
                 ShittySocket.Connect(IPendpoint);
                 return GetAcceptedSocket(ShittySocket);
             }
-            catch (Exception e)
+            catch(SocketException se)
             {
+                return false;
+            }
+            catch(Exception e)
+            {
+#if DEBUG
+                System.Diagnostics.Debugger.Break();
+#endif
                 onError.Invoke(this, e, "Connect method: " + e.Message);
             }
             return false;
@@ -75,14 +83,16 @@ namespace Skylabs.NetShit
                 _connected = false;
                 _hostname = IPendpoint.Address.ToString();
                 _port = IPendpoint.Port;
-                ShittySocket.ReceiveTimeout = 10000;
                 _connected = true;
                 onConnectionEvent.Invoke(this, new ConnectionEvent(_hostname, _port, ConnectionEvent.eConnectionEvent.eceConnect));
                 StartReceiving();
                 return true;
             }
-            catch (Exception e)
+            catch(Exception e)
             {
+#if DEBUG
+                System.Diagnostics.Debugger.Break();
+#endif
                 onError.Invoke(this, e, "Connect method: " + e.Message);
             }
             return false;
@@ -90,8 +100,9 @@ namespace Skylabs.NetShit
 
         public void Close()
         {
-            if (ShittySocket.Connected)
-                ShittySocket.Close();
+            if(ShittySocket.Client != null)
+                if(ShittySocket.Connected)
+                    ShittySocket.Close();
             _connected = false;
             onConnectionEvent(this, new ConnectionEvent(_hostname, _port, ConnectionEvent.eConnectionEvent.eceDisconnect));
         }
@@ -104,18 +115,20 @@ namespace Skylabs.NetShit
         {
             try
             {
-                ShittySocket.GetStream().Write(data, 0, data.Length);
-                ShittySocket.GetStream().Flush();
+                ShittySocket.Client.Send(data);
                 return true;
             }
-            catch (Exception e)
+            catch(Exception e)
             {
+#if DEBUG
+                System.Diagnostics.Debugger.Break();
+#endif
                 onError.Invoke(this, e, "Error writing data.");
                 return false;
             }
         }
 
-        private static void SendCallback(IAsyncResult ar)
+        private void SendCallback(IAsyncResult ar)
         {
             try
             {
@@ -125,9 +138,12 @@ namespace Skylabs.NetShit
                 // Complete sending the data to the remote device.
                 int bytesSent = client.EndSend(ar);
             }
-            catch (Exception e)
+            catch(Exception e)
             {
-                Console.WriteLine(e.ToString());
+#if DEBUG
+                System.Diagnostics.Debugger.Break();
+#endif
+                onError.Invoke(this, e, "Error writing data.");
             }
         }
 
@@ -143,8 +159,11 @@ namespace Skylabs.NetShit
                 ShittySocket.Client.BeginReceive(state.buffer, 0, ShitBag.BufferSize, 0,
                     new AsyncCallback(doInput), state);
             }
-            catch (Exception e)
+            catch(Exception e)
             {
+#if DEBUG
+                System.Diagnostics.Debugger.Break();
+#endif
                 onError.Invoke(this, e, "Error trying to receive data.");
             }
         }
@@ -158,34 +177,57 @@ namespace Skylabs.NetShit
                 ShitBag state = (ShitBag)ar.AsyncState;
                 Socket client = state.workSocket;
                 // Read data from the remote device.
+                if(client == null)
+                    Close();
                 int bytesRead = client.EndReceive(ar);
-                if (bytesRead > 0)
+                if(bytesRead > 0)
                 {
-                    // There might be more data, so store the data received so far.
+                    // Add data to sb.
                     state.sb.Append(Encoding.ASCII.GetString(state.buffer, 0, bytesRead));
-                    //  Get the rest of the data.
-                    client.BeginReceive(state.buffer, 0, ShitBag.BufferSize, 0,
-                        new AsyncCallback(doInput), state);
+                    if(state.sb.Length > 1)
+                    {
+#if DEBUG
+                        System.Console.WriteLine("doInput:" + state.sb.ToString());
+#endif
+                        onInput.Invoke(this, state);
+                    }
+                    //  Go get more data!
+                    StartReceiving();
                 }
                 else
                 {
-                    // All the data has arrived; put it in response.
-                    if (state.sb.Length > 1)
+                    // Got some data.
+                    if(state.sb.Length > 1)
                     {
                         onInput.Invoke(this, state);
                     }
-                    //Start receiving again
-                    StartReceiving();
+                    //Connection dropped, gtfo!
+                    this.Close();
                 }
             }
-            catch (Exception e)
+            catch(ObjectDisposedException oe)
             {
-                onError.Invoke(this, e, "Error in doInput");
+                this.Close();
+            }
+            catch(SocketException se)
+            {
+                this.Close();
+            }
+            catch(Exception e)
+            {
+#if DEBUG
+                System.Diagnostics.Debugger.Break();
+#endif
+                onError.Invoke(this, e, "Error in doInput:" + e.Message);
             }
         }
 
         private void RegisterHandlers()
         {
+            //HACK lol
+#if DEBUG
+            System.Console.WriteLine("Register Handlers");
+#endif
             onError += new dOnError(handleError);
             onInput += new dOnInput(handleInput);
             onConnectionEvent += new dConnectionEvent(handleConnectionEvent);
@@ -193,6 +235,10 @@ namespace Skylabs.NetShit
 
         private void UnregisterHandlers()
         {
+            //HACK lol
+#if DEBUG
+            System.Console.WriteLine("Unregister handlers Handlers");
+#endif
             onError -= handleError;
             onInput -= handleInput;
             onConnectionEvent -= handleConnectionEvent;
@@ -206,9 +252,21 @@ namespace Skylabs.NetShit
         /// <param name="error">User friendly error message.</param>
         protected virtual void handleError(object sm, Exception e, String error)
         {
+            SocketException se = e as SocketException;
+            if(se != null)
+            {
+                if(se.ErrorCode == 10054 || se.SocketErrorCode == SocketError.ConnectionRefused || se.SocketErrorCode == SocketError.ConnectionAborted)
+                {
+                    //Means that the server disconnected, or we disconnected.
+                    this.Close();
+                }
+                else
+                {
 #if DEBUG
-            System.Diagnostics.Debugger.Break();
+                    System.Diagnostics.Debugger.Break();
 #endif
+                }
+            }
         }
 
         /// <summary>
@@ -217,7 +275,7 @@ namespace Skylabs.NetShit
         /// <param name="sm">Object that received the data.</param>
         /// <param name="data">byte array of data received.</param>
         /// <param name="size">Size of the byte array</param>
-        protected virtual void handleInput(object Sender, ShitBag shit) { }
+        protected virtual void handleInput(object Sender, ShitBag shit) { return; }
 
         /// <summary>
         /// Whenever this Connects or Disconnects, this is fired.
@@ -225,6 +283,6 @@ namespace Skylabs.NetShit
         /// <param name="Sender">Object that Connected or Disconnected.</param>
         /// <param name="e">Information about the Connection or Disconnection</param>
         /// <seealso cref="ConnectionEvent.cs"/>
-        protected virtual void handleConnectionEvent(object Sender, ConnectionEvent e) { }
+        protected virtual void handleConnectionEvent(object Sender, ConnectionEvent e) { if(e.Event == ConnectionEvent.eConnectionEvent.eceDisconnect)UnregisterHandlers(); }
     }
 }
