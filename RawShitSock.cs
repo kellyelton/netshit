@@ -11,6 +11,7 @@ namespace Skylabs.NetShit
         private IPEndPoint _ipEndPoint;
         private string _hostname;
         private int _port;
+        private bool bCalledClose = false;
         public delegate void dOnError(object Sender, Exception e, String error);
         public delegate void dOnInput(object Sender, ShitBag bag);
         public delegate void dConnectionEvent(object Sender, ConnectionEvent e);
@@ -100,11 +101,19 @@ namespace Skylabs.NetShit
 
         public void Close()
         {
-            if(ShittySocket.Client != null)
-                if(ShittySocket.Connected)
-                    ShittySocket.Close();
-            _connected = false;
-            onConnectionEvent(this, new ConnectionEvent(_hostname, _port, ConnectionEvent.eConnectionEvent.eceDisconnect));
+            if(!bCalledClose)
+            {
+                bCalledClose = true;
+                if(ShittySocket.Client != null)
+                    if(ShittySocket.Connected)
+                        try
+                        {
+                            ShittySocket.Close();
+                        }
+                        catch(SocketException se) { }
+                _connected = false;
+                onConnectionEvent(this, new ConnectionEvent(_hostname, _port, ConnectionEvent.eConnectionEvent.eceDisconnect));
+            }
         }
 
         /// <summary>
@@ -117,6 +126,11 @@ namespace Skylabs.NetShit
             {
                 ShittySocket.Client.Send(data);
                 return true;
+            }
+            catch(SocketException se)
+            {
+                this.Close();
+                return false;
             }
             catch(Exception e)
             {
@@ -228,9 +242,12 @@ namespace Skylabs.NetShit
 #if DEBUG
             System.Console.WriteLine("Register Handlers");
 #endif
-            onError += new dOnError(handleError);
-            onInput += new dOnInput(handleInput);
-            onConnectionEvent += new dConnectionEvent(handleConnectionEvent);
+            if(onError == null)
+                onError += new dOnError(handleError);
+            if(onInput == null)
+                onInput += new dOnInput(handleInput);
+            if(onConnectionEvent == null)
+                onConnectionEvent += new dConnectionEvent(handleConnectionEvent);
         }
 
         private void UnregisterHandlers()
@@ -283,6 +300,6 @@ namespace Skylabs.NetShit
         /// <param name="Sender">Object that Connected or Disconnected.</param>
         /// <param name="e">Information about the Connection or Disconnection</param>
         /// <seealso cref="ConnectionEvent.cs"/>
-        protected virtual void handleConnectionEvent(object Sender, ConnectionEvent e) { if(e.Event == ConnectionEvent.eConnectionEvent.eceDisconnect)UnregisterHandlers(); }
+        protected virtual void handleConnectionEvent(object Sender, ConnectionEvent e) { if(e.Event == ConnectionEvent.eConnectionEvent.eceDisconnect)UnregisterHandlers(); else bCalledClose = false; }
     }
 }
