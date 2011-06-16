@@ -66,7 +66,7 @@ namespace Skylabs.NetShit
                 oThread = new Thread(new ThreadStart(this.run));
                 oThread.Start();
             }
-            catch (Exception e)
+            catch(Exception e)
             {
                 doError(e, "Connect method: " + e.Message);
             }
@@ -84,7 +84,7 @@ namespace Skylabs.NetShit
             {
                 RegisterHandlers();
                 ipEnd = HostToEndpoint(Host, Port);
-                if (ipEnd == null)
+                if(ipEnd == null)
                 {
                     return false;
                 }
@@ -107,7 +107,7 @@ namespace Skylabs.NetShit
                 LastPingRecieved = DateTime.Now;
                 return true;
             }
-            catch (Exception e)
+            catch(Exception e)
             {
                 doError(e, "Connect method: " + e.Message);
             }
@@ -124,7 +124,7 @@ namespace Skylabs.NetShit
             boolEnd = true;
             boolConnected = false;
             strDisconnectReason = reason;
-            if (sendCloseMessage)
+            if(sendCloseMessage)
                 writeMessage(new EndMessage());
             strDisconnectReason = reason;
         }
@@ -154,31 +154,31 @@ namespace Skylabs.NetShit
         {
             try
             {
-                while (!boolEnd)
+                while(!boolEnd)
                 {
-                    if (sock.Connected)
+                    if(sock.Connected)
                     {
                         readSocket();
                     }
                     else
                         boolEnd = true;
-                    if (boolEnd)
+                    if(boolEnd)
                         break;
                     try
                     {
                         TimeSpan ts = new TimeSpan(DateTime.Now.Ticks - LastPingRecieved.Ticks);
-                        if (ts.TotalMinutes >= 1)
+                        if(ts.TotalMinutes >= 1)
                         {
                             Close("Haven't recieved data in too long.", true);
                         }
                         ts = new TimeSpan(DateTime.Now.Ticks - LastPingSent.Ticks);
-                        if (ts.TotalSeconds >= 20)
+                        if(ts.TotalSeconds >= 20)
                         {
                             writeMessage(new PingMessage());
                         }
                         Thread.Sleep(100);
                     }
-                    catch (Exception ie)
+                    catch(Exception ie)
                     {
                         System.Diagnostics.Debugger.Break();
                         Close("Error: " + ie.Message, false);
@@ -188,7 +188,7 @@ namespace Skylabs.NetShit
                 {
                     sock.Close();
                 }
-                catch (Exception ioe)
+                catch(Exception ioe)
                 {
                     System.Diagnostics.Debugger.Break();
                 }
@@ -196,17 +196,17 @@ namespace Skylabs.NetShit
                 {
                     this.oThread.Join(1000);
                 }
-                catch (Exception e)
+                catch(Exception e)
                 { System.Diagnostics.Debugger.Break(); }
                 doDisconnect(strDisconnectReason, strHost, intPort);
                 try
                 {
                     this.oThread.Abort();
                 }
-                catch (ThreadAbortException e)
+                catch(ThreadAbortException e)
                 { }
             }
-            catch (ThreadAbortException te)
+            catch(ThreadAbortException te)
             {
             }
             UnregisterHandlers();
@@ -214,7 +214,7 @@ namespace Skylabs.NetShit
 
         private void processMessage(SocketMessage sm)
         {
-            if (!sm.Empty)
+            if(!sm.Empty)
                 doInput(sm);
         }
 
@@ -225,12 +225,12 @@ namespace Skylabs.NetShit
         {
             StringBuilder sbuildmessage = new StringBuilder();
             NetworkStream stream = sock.GetStream();
-            if (sock.Available > 0)
+            if(sock.Available > 0)
             {
-                while (sock.Available > 0)
+                while(sock.Available > 0)
                 {
                     int readAmount = sock.ReceiveBufferSize;
-                    if (sock.ReceiveBufferSize > sock.Available)
+                    if(sock.ReceiveBufferSize > sock.Available)
                         readAmount = sock.Available;
                     byte[] bIn = new byte[readAmount];
                     stream.Read(bIn, 0, readAmount);
@@ -240,34 +240,34 @@ namespace Skylabs.NetShit
                 char[] letters = sbuildmessage.ToString().ToCharArray();
                 SocketReadState sr = SocketReadState.WaitingForStart;
                 String strBuff = "";
-                foreach (char c in letters)
+                foreach(char c in letters)
                 {
-                    if (sr == SocketReadState.WaitingForStart || sr == SocketReadState.Reading)
+                    if(sr == SocketReadState.WaitingForStart || sr == SocketReadState.Reading)
                     {
-                        switch (sr)
+                        switch(sr)
                         {
                             case SocketReadState.WaitingForStart:
-                                if (c == 2)//Started message
+                                if(c == 2)//Started message
                                 {
                                     sr = SocketReadState.Reading;
                                     continue;
                                 }
-                                else if (c == 1)//just a ping
+                                else if(c == 1)//just a ping
                                 {
                                     processMessage(new PingMessage());
                                 }
-                                else if (c == 6)//remote socket sent end message
+                                else if(c == 6)//remote socket sent end message
                                 {
                                     Close("Remote Host requested close.", false);
                                     //return new SocketMessage();
                                 }
-                                else if (c == 0)
+                                else if(c == 0)
                                 {
                                     //return new SocketMessage();
                                 }
                                 break;
                             case SocketReadState.Reading:
-                                if (c != 5)//reading
+                                if(c != 5)//reading
                                     strBuff += c;
                                 else// c==5 so were done with the message.
                                 {
@@ -276,15 +276,15 @@ namespace Skylabs.NetShit
                                 break;
                         }
                     }
-                    if (sr == SocketReadState.Ended)
+                    if(sr == SocketReadState.Ended)
                     {
                         SocketMessage sm = new SocketMessage();
                         String[] firstsplit = strBuff.Split(new char[1] { (char)3 });
                         sm.Header = firstsplit[0];
-                        if (firstsplit.Length > 1)
+                        if(firstsplit.Length > 1)
                         {
                             String[] args = firstsplit[1].Split(new char[1] { (char)4 });
-                            foreach (String a in args)
+                            foreach(String a in args)
                             {
                                 sm.Arguments.Add(a);
                             }
@@ -316,22 +316,22 @@ namespace Skylabs.NetShit
                 LastPingSent = DateTime.Now;
                 return true;
             }
-            catch (SocketException se)
+            catch(SocketException se)
             {
                 //handleError(se, se.SocketErrorCode + " : " + se.Message);
             }
-            catch (IOException ioe)
+            catch(IOException ioe)
             {
                 Close("IOException, connection closed.", false);
             }
-            catch (NullReferenceException nre)
+            catch(NullReferenceException nre)
             {
             }
-            catch (ObjectDisposedException oe)
+            catch(ObjectDisposedException oe)
             {
                 Close("Connection closed, could not GetStream()", false);
             }
-            catch (Exception ioe)
+            catch(Exception ioe)
             {
                 doError(ioe, ioe.Message);
             }
@@ -384,20 +384,20 @@ namespace Skylabs.NetShit
         /// Called when there is an error in the SocketClient class.
         /// </summary>
         /// <param name="error">String representation of the error.</param>
-        public abstract void handleError(ShitSock sm, Exception e, String error);
+        protected abstract void handleError(ShitSock sm, Exception e, String error);
 
         /// <summary>
         /// Called when the server sends data that isn't intercepted by the Socket Client class.
         /// </summary>
         /// <param name="input">Data sent from the server as a String</param>
-        public abstract void handleInput(ShitSock sm, SocketMessage input);
+        protected abstract void handleInput(ShitSock sm, SocketMessage input);
 
         /// <summary>
         /// Called when the client connects to the server
         /// </summary>
         /// <param name="host">Host name of the server</param>
         /// <param name="port">Port of the server.</param>
-        public abstract void handleConnect(ShitSock sm, String host, int port);
+        protected abstract void handleConnect(ShitSock sm, String host, int port);
 
         /// <summary>
         /// Called when the connection to the server is closed for any reason.
@@ -405,6 +405,6 @@ namespace Skylabs.NetShit
         /// <param name="reason">String from eather the Close() method or from the server explaining why the connection was dropped.</param>
         /// <param name="host">Host name of the server</param>
         /// <param name="port">Port of the server.</param>
-        public abstract void handleDisconnect(ShitSock sm, String reason, String host, int port);
+        protected abstract void handleDisconnect(ShitSock sm, String reason, String host, int port);
     }
 }
