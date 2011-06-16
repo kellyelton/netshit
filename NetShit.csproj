@@ -7,7 +7,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{B637235E-7CC5-4600-BA00-46F5FACD2DE4}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace>NetShit</RootNamespace>
+    <RootNamespace>Skylabs.NetShit</RootNamespace>
     <AssemblyName>NetShit</AssemblyName>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <TargetFrameworkProfile />
@@ -59,6 +59,8 @@
     <Compile Include="SocketMessage.cs" />
     <Compile Include="PingMessage.cs" />
     <Compile Include="EndMessage.cs" />
+    <Compile Include="ShitBag.cs" />
+    <Compile Include="Tools.cs" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Client.3.5">

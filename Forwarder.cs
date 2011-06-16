@@ -11,15 +11,15 @@ namespace NetShit
         private string _forwardToHost;
         private int _forwardToPort;
         private TcpListener _listener;
-        private ShitSock _rSock;
-        private ShitSock _lSock;
+        private RawShitSock _rSock;
+        private RawShitSock _lSock;
 
         public bool Connected
         {
             get
             {
                 //Making if statements confusing is fun!
-                if (_rSock != null) if (_rSock.Connected) if (_lSock != null) if (_lSock.Connected)
+                if(_rSock != null) if(_rSock.Connected) if(_lSock != null) if(_lSock.Connected)
                                 return true;
                 return false;
             }
@@ -61,7 +61,7 @@ namespace NetShit
 
         public void Start()
         {
-            if (_listenPort == -1 || String.IsNullOrEmpty(_forwardToHost) || _forwardToPort == -1)
+            if(_listenPort == -1 || String.IsNullOrEmpty(_forwardToHost) || _forwardToPort == -1)
                 throw (new HeyDummyInitializeYouVariablesBeforeYouTryAndUseThemDUH("You didn't initialize Forwarder..."));
             _listener = new TcpListener(IPAddress.Loopback, _listenPort);
             _listener.Start(1);
@@ -74,8 +74,8 @@ namespace NetShit
         public void Disimboul()
         {
             _listener.Stop();
-            _rSock.Close("", true);
-            _lSock.Close("", true);
+            _rSock.Close();
+            _lSock.Close();
             _listenPort = -1;
             _forwardToHost = "";
             _forwardToPort = -1;
@@ -98,44 +98,36 @@ namespace NetShit
         {
             _rSock = new ShitSock();
             _lSock = new ShitSock();
-            _rSock.onInput += new ShitSock.dOnInput(_rSock_onInput);
-            _lSock.onInput += new ShitSock.dOnInput(_lSock_onInput);
-            _rSock.onDisconnect += new ShitSock.dOnDisconnect(_rSock_onDisconnect);
-            _lSock.onDisconnect += new ShitSock.dOnDisconnect(_lSock_onDisconnect);
-            _lSock.onConnect += new ShitSock.dOnConnect(_lSock_onConnect);
-            _rSock.onConnect += new ShitSock.dOnConnect(_rSock_onConnect);
+            _rSock.onInput += new RawShitSock.dOnInput(_rSock_onInput);
+            _lSock.onInput += new RawShitSock.dOnInput(_lSock_onInput);
+            _rSock.onConnectionEvent += new RawShitSock.dConnectionEvent(_rSock_onConnectionEvent);
+            _lSock.onConnectionEvent += new RawShitSock.dConnectionEvent(_lSock_onConnectionEvent);
         }
 
-        private void _rSock_onConnect(ShitSock sm, string host, int port)
+        private void _lSock_onConnectionEvent(object Sender, ConnectionEvent e)
         {
-            //System.Diagnostics.Debugger.Break();
+            if(e.Event == ConnectionEvent.eConnectionEvent.eceDisconnect)
+            {
+                _rSock.Close();
+            }
         }
 
-        private void _lSock_onConnect(ShitSock sm, string host, int port)
+        private void _rSock_onConnectionEvent(object Sender, ConnectionEvent e)
         {
-            //System.Diagnostics.Debugger.Break();
+            if(e.Event == ConnectionEvent.eConnectionEvent.eceDisconnect)
+            {
+                _lSock.Close();
+            }
         }
 
-        private void _lSock_onDisconnect(ShitSock sm, string reason, string host, int port)
+        private void _lSock_onInput(object sm, ShitBag bag)
         {
-            if (_rSock.Connected)
-                _rSock.Close("Client disconnected.", false);
+            _rSock.WriteData(bag.buffer);
         }
 
-        private void _rSock_onDisconnect(ShitSock sm, string reason, string host, int port)
+        private void _rSock_onInput(object sm, ShitBag bag)
         {
-            if (_lSock.Connected)
-                _lSock.Close("Server disconnected.", false);
-        }
-
-        private void _lSock_onInput(ShitSock sm, SocketMessage input)
-        {
-            _rSock.writeMessage(input);
-        }
-
-        private void _rSock_onInput(ShitSock sm, SocketMessage input)
-        {
-            _lSock.writeMessage(input);
+            _lSock.WriteData(bag.buffer);
         }
     }
 }

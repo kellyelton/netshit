@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace NetShit
+namespace Skylabs.NetShit
 {
     public class ConnectionEvent
     {
@@ -34,6 +34,11 @@ namespace NetShit
             if(e1.Event == e2.Event)
                 return true;
             return false;
+        }
+
+        public static bool operator !=(ConnectionEvent e1, ConnectionEvent e2)
+        {
+            return ((e1 == e2) == false);
         }
     }
 }
