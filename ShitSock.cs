@@ -9,7 +9,7 @@ using System.Threading;
 
 namespace Skylabs.NetShit
 {
-    public abstract class ShitSock
+    public class ShitSock
     {
         public TcpClient sock { get; set; }
 
@@ -384,20 +384,20 @@ namespace Skylabs.NetShit
         /// Called when there is an error in the SocketClient class.
         /// </summary>
         /// <param name="error">String representation of the error.</param>
-        protected abstract void handleError(ShitSock sm, Exception e, String error);
+        protected virtual void handleError(ShitSock sm, Exception e, String error) { }
 
         /// <summary>
         /// Called when the server sends data that isn't intercepted by the Socket Client class.
         /// </summary>
         /// <param name="input">Data sent from the server as a String</param>
-        protected abstract void handleInput(ShitSock sm, SocketMessage input);
+        protected virtual void handleInput(ShitSock sm, SocketMessage input) { }
 
         /// <summary>
         /// Called when the client connects to the server
         /// </summary>
         /// <param name="host">Host name of the server</param>
         /// <param name="port">Port of the server.</param>
-        protected abstract void handleConnect(ShitSock sm, String host, int port);
+        protected virtual void handleConnect(ShitSock sm, String host, int port) { }
 
         /// <summary>
         /// Called when the connection to the server is closed for any reason.
@@ -405,6 +405,6 @@ namespace Skylabs.NetShit
         /// <param name="reason">String from eather the Close() method or from the server explaining why the connection was dropped.</param>
         /// <param name="host">Host name of the server</param>
         /// <param name="port">Port of the server.</param>
-        protected abstract void handleDisconnect(ShitSock sm, String reason, String host, int port);
+        protected virtual void handleDisconnect(ShitSock sm, String reason, String host, int port) { }
     }
 }
