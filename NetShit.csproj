@@ -11,6 +11,7 @@
     <AssemblyName>NetShit</AssemblyName>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <TargetFrameworkProfile />
+    <IsWebBootstrapper>false</IsWebBootstrapper>
     <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>
@@ -23,7 +24,6 @@
     <MapFileExtensions>true</MapFileExtensions>
     <ApplicationRevision>0</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
-    <IsWebBootstrapper>false</IsWebBootstrapper>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
   </PropertyGroup>
@@ -53,13 +53,13 @@
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="ConnectionEvent.cs" />
     <Compile Include="DummyException.cs" />
-    <Compile Include="Forwarder.cs" />
-    <Compile Include="RawShitSock.cs" />
-    <Compile Include="ShitSock.cs" />
-    <Compile Include="SocketMessage.cs" />
-    <Compile Include="PingMessage.cs" />
-    <Compile Include="EndMessage.cs" />
-    <Compile Include="ShitBag.cs" />
+    <Compile Include="Sockets\Forwarder.cs" />
+    <Compile Include="Sockets\RawShitSock.cs" />
+    <Compile Include="Sockets\ShitSock.cs" />
+    <Compile Include="Containers\SocketMessage.cs" />
+    <Compile Include="Containers\PingMessage.cs" />
+    <Compile Include="Containers\EndMessage.cs" />
+    <Compile Include="Containers\ShitBag.cs" />
     <Compile Include="Tools.cs" />
   </ItemGroup>
   <ItemGroup>
