@@ -48,8 +48,10 @@
   <ItemGroup>
     <Reference Include="System">
     </Reference>
+    <Reference Include="System.Runtime.Serialization.Formatters.Soap" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AESEncrypt.cs" />
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="ConnectionEvent.cs" />
     <Compile Include="DummyException.cs" />

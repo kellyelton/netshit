@@ -227,13 +227,6 @@ namespace Skylabs.NetShit
             {
                 this.Close();
             }
-            catch(Exception e)
-            {
-#if DEBUG
-                System.Diagnostics.Debugger.Break();
-#endif
-                onError.Invoke(this, e, "Error in doInput:" + e.Message);
-            }
         }
 
         private void RegisterHandlers()
