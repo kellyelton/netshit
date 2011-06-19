@@ -9,8 +9,8 @@ namespace Skylabs.NetShit
     {
         public static byte[] Encrypt(byte[] input, string Password, string Salt, string HashAlgorithm, int PasswordIterations, string InitialVector, int KeySize)
         {
-            byte[] InitialVectorBytes = Encoding.ASCII.GetBytes(InitialVector);
-            byte[] SaltValueBytes = Encoding.ASCII.GetBytes(Salt);
+            byte[] InitialVectorBytes = Convert.FromBase64String(InitialVector);
+            byte[] SaltValueBytes = Convert.FromBase64String(Salt);
             byte[] PlainTextBytes =input;
             PasswordDeriveBytes DerivedPassword = new PasswordDeriveBytes(Password, SaltValueBytes, HashAlgorithm, PasswordIterations);
             byte[] KeyBytes = DerivedPassword.GetBytes(KeySize / 8);
@@ -29,8 +29,8 @@ namespace Skylabs.NetShit
 
         public static byte[] Decrypt(byte[] input, string Password, string Salt, string HashAlgorithm, int PasswordIterations, string InitialVector, int KeySize)
         {
-            byte[] InitialVectorBytes = Encoding.ASCII.GetBytes(InitialVector);
-            byte[] SaltValueBytes = Encoding.ASCII.GetBytes(Salt);
+            byte[] InitialVectorBytes = Convert.FromBase64String(InitialVector);
+            byte[] SaltValueBytes = Convert.FromBase64String(Salt);
             byte[] CipherTextBytes = input;
             PasswordDeriveBytes DerivedPassword = new PasswordDeriveBytes(Password, SaltValueBytes, HashAlgorithm, PasswordIterations);
             byte[] KeyBytes = DerivedPassword.GetBytes(KeySize / 8);

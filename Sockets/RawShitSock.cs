@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 
 namespace Skylabs.NetShit
 {
@@ -197,11 +196,11 @@ namespace Skylabs.NetShit
                 if(bytesRead > 0)
                 {
                     // Add data to sb.
-                    state.sb.Append(Encoding.ASCII.GetString(state.buffer, 0, bytesRead));
+                    state.sb.Append(Convert.ToBase64String(state.buffer, 0, bytesRead));
                     if(state.sb.Length > 1)
                     {
 #if DEBUG
-                        System.Console.WriteLine("doInput:" + state.sb.ToString());
+                        //System.Console.WriteLine("doInput:" + state.sb.ToString());
 #endif
                         onInput.Invoke(this, state);
                     }

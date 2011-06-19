@@ -73,7 +73,7 @@ namespace Skylabs.NetShit
         /// <returns>String for transmitting</returns>
         public virtual String getMessage()
         {
-            //return Encoding.ASCII.GetString(SocketMessage.Serialize(this));
+            //return Convert.ToBase64String(SocketMessage.Serialize(this));
             String ret = "";
             if(Empty)
                 return ret;
