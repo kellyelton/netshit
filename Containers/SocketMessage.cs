@@ -96,9 +96,13 @@ namespace Skylabs.NetShit
 
         public static SocketMessage DeSerialize(byte[] data)
         {
-            MemoryStream ms = new MemoryStream(data);
-            BinaryFormatter bff = new BinaryFormatter();
-            return (SocketMessage)bff.Deserialize(ms);
+            if(data.Length > 0)
+            {
+                MemoryStream ms = new MemoryStream(data);
+                BinaryFormatter bff = new BinaryFormatter();
+                return (SocketMessage)bff.Deserialize(ms);
+            }
+            return new SocketMessage();
         }
 
         public static byte[] Serialize(SocketMessage obj)

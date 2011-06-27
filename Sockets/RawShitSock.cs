@@ -195,6 +195,7 @@ namespace Skylabs.NetShit
                 int bytesRead = client.EndReceive(ar);
                 if(bytesRead > 0)
                 {
+                    Array.Resize(ref state.buffer, bytesRead);
                     // Add data to sb.
                     state.sb.Append(Convert.ToBase64String(state.buffer, 0, bytesRead));
                     if(state.sb.Length > 1)
