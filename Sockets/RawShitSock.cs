@@ -63,39 +63,21 @@ namespace Skylabs.NetShit
             {
                 return false;
             }
-            catch(Exception e)
-            {
-#if DEBUG
-                System.Diagnostics.Debugger.Break();
-#endif
-                onError.Invoke(this, e, "Connect method: " + e.Message);
-            }
             return false;
         }
 
         public bool GetAcceptedSocket(TcpClient s)
         {
-            try
-            {
-                RegisterHandlers();
-                ShittySocket = s;
-                IPendpoint = ShittySocket.Client.RemoteEndPoint as IPEndPoint;
-                _connected = false;
-                _hostname = IPendpoint.Address.ToString();
-                _port = IPendpoint.Port;
-                _connected = true;
-                onConnectionEvent.Invoke(this, new ConnectionEvent(_hostname, _port, ConnectionEvent.eConnectionEvent.eceConnect));
-                StartReceiving();
-                return true;
-            }
-            catch(Exception e)
-            {
-#if DEBUG
-                System.Diagnostics.Debugger.Break();
-#endif
-                onError.Invoke(this, e, "Connect method: " + e.Message);
-            }
-            return false;
+            RegisterHandlers();
+            ShittySocket = s;
+            IPendpoint = ShittySocket.Client.RemoteEndPoint as IPEndPoint;
+            _connected = false;
+            _hostname = IPendpoint.Address.ToString();
+            _port = IPendpoint.Port;
+            _connected = true;
+            onConnectionEvent.Invoke(this, new ConnectionEvent(_hostname, _port, ConnectionEvent.eConnectionEvent.eceConnect));
+            StartReceiving();
+            return true;
         }
 
         public void Close()
@@ -131,14 +113,6 @@ namespace Skylabs.NetShit
                 this.Close();
                 return false;
             }
-            catch(Exception e)
-            {
-#if DEBUG
-                System.Diagnostics.Debugger.Break();
-#endif
-                onError.Invoke(this, e, "Error writing data.");
-                return false;
-            }
         }
 
         private void SendCallback(IAsyncResult ar)
@@ -151,7 +125,7 @@ namespace Skylabs.NetShit
                 // Complete sending the data to the remote device.
                 int bytesSent = client.EndSend(ar);
             }
-            catch(Exception e)
+            catch(SocketException e)
             {
 #if DEBUG
                 System.Diagnostics.Debugger.Break();
@@ -172,7 +146,7 @@ namespace Skylabs.NetShit
                 ShittySocket.Client.BeginReceive(state.buffer, 0, ShitBag.BufferSize, 0,
                     new AsyncCallback(doInput), state);
             }
-            catch(Exception e)
+            catch(SocketException e)
             {
 #if DEBUG
                 System.Diagnostics.Debugger.Break();
