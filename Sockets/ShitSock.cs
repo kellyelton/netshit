@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 //using System.Windows;
 
@@ -8,6 +9,7 @@ namespace Skylabs.NetShit
     {
         public delegate void dOnSockMessageInput(object Sender, SocketMessage sm);
         public event dOnSockMessageInput onSocketMessageInput;
+        private List<byte> buffer = new List<byte>();
 
         private enum SocketReadState
         {
@@ -32,19 +34,50 @@ namespace Skylabs.NetShit
         /// <returns>true on success, false on error. Note: Success just means that the message has been sent, it doesn't verifiy it was recieved.</returns>
         public Boolean writeMessage(SocketMessage sm)
         {
-            return WriteData(SocketMessage.Serialize(sm));
+            List<byte> temp = new List<byte>(SocketMessage.Serialize(sm));
+            byte hbyte =System.Text.ASCIIEncoding.ASCII.GetBytes("#")[0];
+            for(int i=0; i < 5; i++)
+                temp.Add(hbyte);
+            return WriteData(temp.ToArray());
         }
 
         override protected void handleInput(object Sender, ShitBag shit)
         {
-            SocketMessage sm = SocketMessage.DeSerialize(shit.buffer);
-            if(sm == null)
+            buffer.AddRange(shit.buffer);
+            process_buffer();
+        }
+
+        private void process_buffer()
+        {
+            List<byte> temp = new List<byte>();
+            int hashcount = 0;
+            byte hbyte =System.Text.ASCIIEncoding.ASCII.GetBytes("#")[0];
+            for(int i=0; i < buffer.Count; i++)
             {
-                doInput(new PingMessage());
+                if(hashcount == 5)
+                {
+                    buffer.RemoveRange(0, temp.Count);
+                    temp.RemoveRange(temp.Count - 5, 5);
+                    doInput(SocketMessage.DeSerialize(temp.ToArray()));
+                    if(buffer.Count > 0)
+                        process_buffer();
+                    return;
+                }
+                temp.Add(buffer[i]);
+                if(temp[i] == hbyte)
+                {
+                    hashcount++;
+                }
+                else
+                    hashcount = 0;
             }
-            else
+            if(hashcount == 5)
             {
-                doInput(sm);
+                buffer.RemoveRange(0, temp.Count);
+                temp.RemoveRange(temp.Count - 5, 5);
+                doInput(SocketMessage.DeSerialize(temp.ToArray()));
+                if(buffer.Count > 0)
+                    process_buffer();
             }
         }
 

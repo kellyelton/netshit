@@ -38,7 +38,6 @@ namespace Skylabs.NetShit
         {
             try
             {
-                RegisterHandlers();
                 try
                 {
                     IPendpoint = Tools.HostToEndpoint(host, port);
@@ -71,7 +70,7 @@ namespace Skylabs.NetShit
             RegisterHandlers();
             ShittySocket = s;
             IPendpoint = ShittySocket.Client.RemoteEndPoint as IPEndPoint;
-            _connected = false;
+            bCalledClose = false;
             _hostname = IPendpoint.Address.ToString();
             _port = IPendpoint.Port;
             _connected = true;
@@ -86,14 +85,19 @@ namespace Skylabs.NetShit
             {
                 bCalledClose = true;
                 if(ShittySocket.Client != null)
+                {
                     if(ShittySocket.Connected)
+                    {
                         try
                         {
                             ShittySocket.Close();
                         }
                         catch(SocketException se) { }
+                    }
+                }
                 _connected = false;
                 onConnectionEvent(this, new ConnectionEvent(_hostname, _port, ConnectionEvent.eConnectionEvent.eceDisconnect));
+                UnregisterHandlers();
             }
         }
 
@@ -267,6 +271,6 @@ namespace Skylabs.NetShit
         /// <param name="Sender">Object that Connected or Disconnected.</param>
         /// <param name="e">Information about the Connection or Disconnection</param>
         /// <seealso cref="ConnectionEvent.cs"/>
-        protected virtual void handleConnectionEvent(object Sender, ConnectionEvent e) { if(e.Event == ConnectionEvent.eConnectionEvent.eceDisconnect)UnregisterHandlers(); else bCalledClose = false; }
+        protected virtual void handleConnectionEvent(object Sender, ConnectionEvent e) { }
     }
 }
