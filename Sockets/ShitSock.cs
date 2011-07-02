@@ -58,7 +58,14 @@ namespace Skylabs.NetShit
                 {
                     buffer.RemoveRange(0, temp.Count);
                     temp.RemoveRange(temp.Count - 5, 5);
-                    doInput(SocketMessage.DeSerialize(temp.ToArray()));
+                    try
+                    {
+                        doInput(SocketMessage.DeSerialize(temp.ToArray()));
+                    }
+                    catch(Exception e)
+                    {
+                        hashcount = 0;
+                    }
                     if(buffer.Count > 0)
                         process_buffer();
                     return;
@@ -75,7 +82,13 @@ namespace Skylabs.NetShit
             {
                 buffer.RemoveRange(0, temp.Count);
                 temp.RemoveRange(temp.Count - 5, 5);
-                doInput(SocketMessage.DeSerialize(temp.ToArray()));
+                try
+                {
+                    doInput(SocketMessage.DeSerialize(temp.ToArray()));
+                }
+                catch(Exception e)
+                {
+                }
                 if(buffer.Count > 0)
                     process_buffer();
             }
