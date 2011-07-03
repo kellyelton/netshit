@@ -1,11 +1,13 @@
 using System;
+
 namespace Skylabs.NetShit
 {
-    
+    [Serializable]
     public class EndMessage : SocketMessage
     {
         public String _Header = new String(new char[1] { (char)6 });
         private Boolean _forceFull = true;
+
         public override String getMessage()
         {
             String ret = "";
@@ -14,4 +16,3 @@ namespace Skylabs.NetShit
         }
     }
 }
-
