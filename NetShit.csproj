@@ -65,6 +65,7 @@
     <Reference Include="System">
     </Reference>
     <Reference Include="System.Runtime.Serialization.Formatters.Soap" />
+    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AESEncrypt.cs" />
@@ -78,6 +79,7 @@
     <Compile Include="Containers\PingMessage.cs" />
     <Compile Include="Containers\EndMessage.cs" />
     <Compile Include="Containers\ShitBag.cs" />
+    <Compile Include="Sockets\XMLShitSock.cs" />
     <Compile Include="Tools.cs" />
   </ItemGroup>
   <ItemGroup>
